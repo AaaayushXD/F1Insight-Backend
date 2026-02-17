@@ -22,7 +22,9 @@ export async function recommend(req: Request, res: Response, next: NextFunction)
       safetyCar: mlResult.safety_car_analysis || {},
       weatherImpact: mlResult.weather_impact || {},
       competitorAnalysis: mlResult.competitor_analysis || {},
-      recommendations: mlResult.tactical_recommendations || [],
+      recommendations: (mlResult.tactical_recommendations || []).map(
+        (r: any) => (typeof r === 'string' ? r : r.action || JSON.stringify(r))
+      ),
     });
 
     res.json({

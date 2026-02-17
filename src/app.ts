@@ -31,7 +31,7 @@ app.use(express.urlencoded({ extended: false, limit: '10kb' }));
 app.use(cookieParser());
 
 // --- Rate Limiting ---
-app.use('/api/', globalLimiter);
+// app.use('/api/', globalLimiter);
 
 // --- Request Logging ---
 app.use((req, res, next) => {
