@@ -134,7 +134,7 @@ export async function getSystemStats(req: Request, res: Response, next: NextFunc
       User.countDocuments(),
       User.countDocuments({ isVerified: true }),
       Prediction.countDocuments(),
-      Promise.resolve(getCacheStats()),
+      getCacheStats(),
     ]);
 
     let mlStatus = 'unavailable';
@@ -174,6 +174,15 @@ export async function broadcastNotification(req: Request, res: Response, next: N
 
     await Notification.insertMany(notifications);
 
+    await AuditLog.create({
+      userId: req.user!.userId,
+      action: 'broadcast-notification',
+      resource: 'notification',
+      details: { title, type: type || 'system', userCount: users.length },
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
     res.json({ success: true, message: `Notification sent to ${users.length} users` });
   } catch (error) {
     next(error);
@@ -184,15 +193,35 @@ export async function triggerMLCollection(req: Request, res: Response, next: Nex
   try {
     const { startYear, endYear } = req.body;
     const result = await mlService.triggerDataCollection(startYear || 2014, endYear || new Date().getFullYear());
+
+    await AuditLog.create({
+      userId: req.user!.userId,
+      action: 'ml-data-collection',
+      resource: 'ml-service',
+      details: { startYear, endYear },
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
     res.json({ success: true, data: result });
   } catch (error) {
     next(error);
   }
 }
 
-export async function flushCacheEndpoint(_req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function flushCacheEndpoint(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    flushCache();
+    await flushCache();
+
+    await AuditLog.create({
+      userId: req.user!.userId,
+      action: 'cache-flush',
+      resource: 'cache',
+      details: {},
+      ipAddress: req.ip || '',
+      userAgent: req.headers['user-agent'] || '',
+    });
+
     res.json({ success: true, message: 'Cache flushed' });
   } catch (error) {
     next(error);

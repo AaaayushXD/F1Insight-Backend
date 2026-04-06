@@ -1,42 +1,90 @@
-import NodeCache from 'node-cache';
+import { getRedisService } from '../config/redis';
 import { logger } from '../utils/logger';
 
-const cache = new NodeCache({
-  stdTTL: 3600,       // default 1 hour
-  checkperiod: 120,   // check for expired every 2 min
-  useClones: false,    // return reference (faster, avoid deep clone)
-});
+export async function getCached<T>(key: string): Promise<T | undefined> {
+  const redis = getRedisService()?.getClient();
+  if (!redis) return undefined;
 
-export function getCached<T>(key: string): T | undefined {
-  const value = cache.get<T>(key);
-  if (value !== undefined) {
-    logger.debug(`Cache hit: ${key}`);
+  try {
+    const value = await redis.get(key);
+    if (value) {
+      logger.debug(`Cache hit: ${key}`);
+      return JSON.parse(value) as T;
+    }
+  } catch (error) {
+    logger.error(`Error getting cache: ${key}`, { error });
   }
-  return value;
+  return undefined;
 }
 
-export function setCache<T>(key: string, value: T, ttlSeconds?: number): void {
-  cache.set(key, value, ttlSeconds ?? 3600);
-  logger.debug(`Cache set: ${key} (TTL: ${ttlSeconds ?? 3600}s)`);
-}
+export async function setCache<T>(key: string, value: T, ttlSeconds?: number): Promise<void> {
+  const redis = getRedisService()?.getClient();
+  if (!redis) return;
 
-export function invalidateCache(key: string): void {
-  cache.del(key);
-}
-
-export function invalidateCachePattern(pattern: string): void {
-  const keys = cache.keys().filter((k) => k.startsWith(pattern));
-  if (keys.length > 0) {
-    cache.del(keys);
-    logger.debug(`Cache invalidated: ${keys.length} keys matching "${pattern}"`);
+  try {
+    const serializedValue = JSON.stringify(value);
+    if (ttlSeconds) {
+      await redis.set(key, serializedValue, 'EX', ttlSeconds);
+    } else {
+      await redis.set(key, serializedValue);
+    }
+    logger.debug(`Cache set: ${key} (TTL: ${ttlSeconds ?? 'none'}s)`);
+  } catch (error) {
+    logger.error(`Error setting cache: ${key}`, { error });
   }
 }
 
-export function getCacheStats() {
-  return cache.getStats();
+export async function invalidateCache(key: string): Promise<void> {
+  const redis = getRedisService()?.getClient();
+  if (!redis) return;
+
+  try {
+    await redis.del(key);
+  } catch (error) {
+    logger.error(`Error invalidating cache: ${key}`, { error });
+  }
 }
 
-export function flushCache(): void {
-  cache.flushAll();
-  logger.info('Cache flushed');
+export async function invalidateCachePattern(pattern: string): Promise<void> {
+  const redis = getRedisService()?.getClient();
+  if (!redis) return;
+
+  try {
+    const keys = await redis.keys(pattern);
+    if (keys.length > 0) {
+      await redis.del(...keys);
+      logger.debug(`Cache invalidated: ${keys.length} keys matching "${pattern}"`);
+    }
+  } catch (error) {
+    logger.error(`Error invalidating cache pattern: ${pattern}`, { error });
+  }
 }
+
+export async function getCacheStats() {
+  const redis = getRedisService()?.getClient();
+  if (!redis) return { info: 'not initialized' };
+  const info = await redis.info();
+  return { info };
+}
+
+export async function flushCache(): Promise<void> {
+  const redis = getRedisService()?.getClient();
+  if (!redis) return;
+
+  try {
+    await redis.flushall();
+    logger.info('Cache flushed');
+  } catch (error) {
+    logger.error('Error flushing cache', { error });
+  }
+}
+
+// Proxy default export to the client of the service
+export default {
+  get call() {
+    return getRedisService()?.getClient().call.bind(getRedisService()?.getClient());
+  },
+  get status() {
+    return getRedisService()?.getClient().status || 'not initialized';
+  }
+};

@@ -18,20 +18,20 @@ interface EmailOptions {
   html: string;
 }
 
-export async function sendEmail(options: EmailOptions): Promise<void> {
-  try {
-    await transporter.sendMail({
-      from: env.EMAIL_FROM,
-      to: options.to,
-      subject: options.subject,
-      html: options.html,
-    });
+export function sendEmail(options: EmailOptions): void {
+  transporter.sendMail({
+    from: env.EMAIL_FROM,
+    to: options.to,
+    subject: options.subject,
+    html: options.html,
+  })
+  .then(() => {
     logger.info('Email sent', { to: options.to, subject: options.subject });
-  } catch (error) {
+  })
+  .catch((error) => {
     logger.error('Email send failed', { to: options.to, error });
     // Don't throw — email failure shouldn't block the auth flow
-    // The user can always resend
-  }
+  });
 }
 
 export function buildOTPEmail(name: string, code: string): string {

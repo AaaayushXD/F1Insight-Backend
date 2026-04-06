@@ -36,7 +36,11 @@ function userId(user: IUser): string {
 
 // --- Signup ---
 
-export async function signup(params: SignupParams): Promise<{ userId: string; message: string }> {
+export async function signup(
+  params: SignupParams,
+  ipAddress: string = '',
+  userAgent: string = '',
+): Promise<{ userId: string; message: string }> {
   const { email, password, name } = params;
 
   const existing = await User.findOne({ email });
@@ -62,6 +66,8 @@ export async function signup(params: SignupParams): Promise<{ userId: string; me
     name: user.name,
     purpose: 'signup',
   });
+
+  await createAuditLog(userId(user), 'signup-attempt', 'user', { email }, ipAddress, userAgent);
 
   return {
     userId: userId(user),
@@ -197,7 +203,11 @@ export async function logout(
 
 // --- Forgot Password ---
 
-export async function forgotPassword(email: string): Promise<{ userId: string; message: string }> {
+export async function forgotPassword(
+  email: string,
+  ipAddress: string = '',
+  userAgent: string = '',
+): Promise<{ userId: string; message: string }> {
   const user = await User.findOne({ email });
   if (!user) {
     // Don't reveal whether email exists
@@ -210,6 +220,8 @@ export async function forgotPassword(email: string): Promise<{ userId: string; m
     name: user.name,
     purpose: 'password-reset',
   });
+
+  await createAuditLog(userId(user), 'password-reset-request', 'user', { email }, ipAddress, userAgent);
 
   return { userId: userId(user), message: 'If the email exists, an OTP has been sent.' };
 }

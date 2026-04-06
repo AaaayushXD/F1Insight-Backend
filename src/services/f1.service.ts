@@ -50,7 +50,7 @@ async function fetchErgast(path: string): Promise<any> {
 
 export async function getSchedule(year: number) {
   const cacheKey = `f1:schedule:${year}`;
-  const cached = getCached(cacheKey);
+  const cached = await getCached(cacheKey);
   if (cached) return cached;
 
   const data = await fetchErgast(`/${year}`);
@@ -62,7 +62,7 @@ export async function getSchedule(year: number) {
     races: races.map(transformRace),
   };
 
-  setCache(cacheKey, result, getTTL('CURRENT_SCHEDULE', year));
+  await setCache(cacheKey, result, getTTL('CURRENT_SCHEDULE', year));
   return result;
 }
 
@@ -70,7 +70,7 @@ export async function getSchedule(year: number) {
 
 export async function getDrivers(year: number) {
   const cacheKey = `f1:drivers:${year}`;
-  const cached = getCached(cacheKey);
+  const cached = await getCached(cacheKey);
   if (cached) return cached;
 
   const data = await fetchErgast(`/${year}/drivers`);
@@ -82,7 +82,7 @@ export async function getDrivers(year: number) {
     drivers,
   };
 
-  setCache(cacheKey, result, getTTL('DRIVERS', year));
+  await setCache(cacheKey, result, getTTL('DRIVERS', year));
   return result;
 }
 
@@ -90,7 +90,7 @@ export async function getDrivers(year: number) {
 
 export async function getConstructors(year: number) {
   const cacheKey = `f1:constructors:${year}`;
-  const cached = getCached(cacheKey);
+  const cached = await getCached(cacheKey);
   if (cached) return cached;
 
   const data = await fetchErgast(`/${year}/constructors`);
@@ -102,7 +102,7 @@ export async function getConstructors(year: number) {
     constructors,
   };
 
-  setCache(cacheKey, result, getTTL('CONSTRUCTORS', year));
+  await setCache(cacheKey, result, getTTL('CONSTRUCTORS', year));
   return result;
 }
 
@@ -110,7 +110,7 @@ export async function getConstructors(year: number) {
 
 export async function getCircuits(year: number) {
   const cacheKey = `f1:circuits:${year}`;
-  const cached = getCached(cacheKey);
+  const cached = await getCached(cacheKey);
   if (cached) return cached;
 
   const data = await fetchErgast(`/${year}/circuits`);
@@ -122,13 +122,13 @@ export async function getCircuits(year: number) {
     circuits,
   };
 
-  setCache(cacheKey, result, getTTL('CIRCUITS', year));
+  await setCache(cacheKey, result, getTTL('CIRCUITS', year));
   return result;
 }
 
 export async function getCircuitById(circuitId: string) {
   const cacheKey = `f1:circuit:${circuitId}`;
-  const cached = getCached(cacheKey);
+  const cached = await getCached(cacheKey);
   if (cached) return cached;
 
   const data = await fetchErgast(`/circuits/${circuitId}`);
@@ -139,7 +139,7 @@ export async function getCircuitById(circuitId: string) {
   }
 
   const result = circuits[0];
-  setCache(cacheKey, result, TTL.CIRCUITS);
+  await setCache(cacheKey, result, TTL.CIRCUITS);
   return result;
 }
 
@@ -147,7 +147,7 @@ export async function getCircuitById(circuitId: string) {
 
 export async function getRaceResults(year: number, round: number) {
   const cacheKey = `f1:results:${year}:${round}`;
-  const cached = getCached(cacheKey);
+  const cached = await getCached(cacheKey);
   if (cached) return cached;
 
   const data = await fetchErgast(`/${year}/${round}/results`);
@@ -168,7 +168,7 @@ export async function getRaceResults(year: number, round: number) {
     results: race.Results || [],
   };
 
-  setCache(cacheKey, result, getTTL('RESULTS', year));
+  await setCache(cacheKey, result, getTTL('RESULTS', year));
   return result;
 }
 
@@ -176,7 +176,7 @@ export async function getRaceResults(year: number, round: number) {
 
 export async function getLastRaceResults() {
   const cacheKey = 'f1:results:last';
-  const cached = getCached(cacheKey);
+  const cached = await getCached(cacheKey);
   if (cached) return cached;
 
   const data = await fetchErgast('/current/last/results');
@@ -196,7 +196,7 @@ export async function getLastRaceResults() {
     results: race.Results || [],
   };
 
-  setCache(cacheKey, result, TTL.RESULTS);
+  await setCache(cacheKey, result, TTL.RESULTS);
   return result;
 }
 
@@ -204,7 +204,7 @@ export async function getLastRaceResults() {
 
 export async function getDriverStandings(year: number) {
   const cacheKey = `f1:standings:drivers:${year}`;
-  const cached = getCached(cacheKey);
+  const cached = await getCached(cacheKey);
   if (cached) return cached;
 
   const data = await fetchErgast(`/${year}/driverStandings`);
@@ -215,13 +215,13 @@ export async function getDriverStandings(year: number) {
     standings: lists.length > 0 ? lists[0].DriverStandings || [] : [],
   };
 
-  setCache(cacheKey, result, getTTL('STANDINGS', year));
+  await setCache(cacheKey, result, getTTL('STANDINGS', year));
   return result;
 }
 
 export async function getConstructorStandings(year: number) {
   const cacheKey = `f1:standings:constructors:${year}`;
-  const cached = getCached(cacheKey);
+  const cached = await getCached(cacheKey);
   if (cached) return cached;
 
   const data = await fetchErgast(`/${year}/constructorStandings`);
@@ -232,7 +232,7 @@ export async function getConstructorStandings(year: number) {
     standings: lists.length > 0 ? lists[0].ConstructorStandings || [] : [],
   };
 
-  setCache(cacheKey, result, getTTL('STANDINGS', year));
+  await setCache(cacheKey, result, getTTL('STANDINGS', year));
   return result;
 }
 
@@ -240,7 +240,7 @@ export async function getConstructorStandings(year: number) {
 
 export async function getSeasons() {
   const cacheKey = 'f1:seasons';
-  const cached = getCached(cacheKey);
+  const cached = await getCached(cacheKey);
   if (cached) return cached;
 
   const data = await fetchErgast('/seasons');
@@ -251,7 +251,7 @@ export async function getSeasons() {
     seasons,
   };
 
-  setCache(cacheKey, result, TTL.HISTORICAL);
+  await setCache(cacheKey, result, TTL.HISTORICAL);
   return result;
 }
 

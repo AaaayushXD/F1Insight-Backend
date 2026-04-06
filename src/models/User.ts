@@ -101,16 +101,16 @@ userSchema.index({ role: 1 });
 userSchema.index({ isDeleted: 1 });
 
 // Exclude soft-deleted users from default queries
-userSchema.pre('find', function () {
-  if ((this as any).getFilter().isDeleted === undefined) {
+const excludeDeletedMiddleware = function (this: any) {
+  if (this.getFilter().isDeleted === undefined) {
     this.where({ isDeleted: false });
   }
-});
+};
 
-userSchema.pre('findOne', function () {
-  if ((this as any).getFilter().isDeleted === undefined) {
-    this.where({ isDeleted: false });
-  }
-});
+userSchema.pre('find', excludeDeletedMiddleware);
+userSchema.pre('findOne', excludeDeletedMiddleware);
+userSchema.pre('countDocuments', excludeDeletedMiddleware);
+userSchema.pre('updateOne', excludeDeletedMiddleware);
+userSchema.pre('updateMany', excludeDeletedMiddleware);
 
 export const User = mongoose.model<IUser>('User', userSchema);

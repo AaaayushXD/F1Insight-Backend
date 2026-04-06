@@ -12,7 +12,11 @@ const REFRESH_COOKIE_OPTIONS = {
 
 export async function signup(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const result = await authService.signup(req.body);
+    const result = await authService.signup(
+      req.body,
+      req.ip || '',
+      req.headers['user-agent'] || '',
+    );
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -119,7 +123,11 @@ export async function logout(req: Request, res: Response, next: NextFunction): P
 
 export async function forgotPassword(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
-    const result = await authService.forgotPassword(req.body.email);
+    const result = await authService.forgotPassword(
+      req.body.email,
+      req.ip || '',
+      req.headers['user-agent'] || '',
+    );
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
